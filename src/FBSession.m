@@ -428,9 +428,17 @@ static FBSession *g_activeSession = nil;
 // or FBLoginDialog
 - (BOOL)handleAuthorizationCallbacks:(NSString *)accessToken params:(NSDictionary *)params loginType:(FBSessionLoginType)loginType {
     // Make sure our logger is setup to finish up the authorization roundtrip
-    if (!self.authLogger) {
-        NSDictionary *clientState = [FBSessionUtility clientStateFromQueryParams:params];
-        NSString *ID = clientState[FBSessionAuthLoggerParamIDKey];
+    NSDictionary *clientState = [FBSessionUtility clientStateFromQueryParams:params];
+    NSString *ID = clientState[FBSessionAuthLoggerParamIDKey];
+
+    if (self.authLogger) { // If session already sent auth requests
+        if (![self.authLogger.ID isEqualToString:ID]) {
+            // If we got auth response, but ID differ from that we has sent,
+            // skip that response, or we will have accessToken for old session
+            return NO;
+        }
+    }
+    else {
         NSString *authMethod = clientState[FBSessionAuthLoggerParamAuthMethodKey];
         if (ID || authMethod) {
             self.authLogger = [[[FBSessionAuthLogger alloc] initWithSession:self ID:ID authMethod:authMethod] autorelease];
