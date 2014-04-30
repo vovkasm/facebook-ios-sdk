@@ -100,7 +100,6 @@ NSString *const FBAppEventsNativeLoginDialogEndTime            = @"fb_native_log
 
 NSString *const FBAppEventNameFBDialogsWebLoginCompleted       = @"fb_dialogs_web_login_dialog_complete";
 NSString *const FBAppEventsWebLoginE2E                         = @"fb_web_login_e2e";
-NSString *const FBAppEventsWebLoginSwitchbackTime              = @"fb_web_login_switchback_time";
 
 NSString *const FBAppEventNameFBSessionAuthStart               = @"fb_mobile_login_start";
 NSString *const FBAppEventNameFBSessionAuthEnd                 = @"fb_mobile_login_complete";
@@ -968,7 +967,7 @@ const int MAX_IDENTIFIER_LENGTH                      = 40;
 
         FBSessionAppEventsState *appEventsState = session.appEventsState;
         @synchronized (appEventsState) {
-            appEventsState.numSkippedEventsDueToFullBuffer += [[persistedData objectForKey:FBAppEventsPersistKeyNumSkipped] integerValue];
+            appEventsState.numSkippedEventsDueToFullBuffer += [[persistedData objectForKey:FBAppEventsPersistKeyNumSkipped] unsignedIntegerValue];
             NSArray *retrievedObjects = [persistedData objectForKey:FBAppEventsPersistKeyEvents];
             if (retrievedObjects.count) {
                 [appEventsState.inFlightEvents addObjectsFromArray:retrievedObjects];
@@ -1056,7 +1055,7 @@ const int MAX_IDENTIFIER_LENGTH                      = 40;
         }
 
         NSDictionary *appEventData = @{
-            FBAppEventsPersistKeyNumSkipped   : [NSNumber numberWithInt:appEventsState.numSkippedEventsDueToFullBuffer],
+            FBAppEventsPersistKeyNumSkipped   : [NSNumber numberWithUnsignedInteger:appEventsState.numSkippedEventsDueToFullBuffer],
             FBAppEventsPersistKeyEvents       : appEventsState.inFlightEvents,
         };
 
@@ -1101,7 +1100,7 @@ const int MAX_IDENTIFIER_LENGTH                      = 40;
 }
 
 + (void)ensureOnMainThread {
-    FBConditionalLog([NSThread isMainThread], @"*** This method expected to be called on the main thread.");
+    FBConditionalLog([NSThread isMainThread], FBLoggingBehaviorInformational, @"*** This method expected to be called on the main thread.");
 }
 
 #pragma mark - Custom Audience token stuff
