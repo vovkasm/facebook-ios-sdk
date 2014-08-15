@@ -19,7 +19,7 @@
 
 # process options, valid arguments -c [Debug|Release] -n 
 BUILDCONFIGURATION=Debug
-SCHEMES="facebook-ios-sdk-tests FacebookSDKIntegrationTests"
+SCHEMES="FacebookSDKTests FacebookSDKIntegrationTests FacebookSDKApplicationTests"
 
 while getopts ":nc:" OPTNAME
 do
@@ -32,8 +32,9 @@ do
       echo "       -c sets configuration"
       echo "       -n clean before build"
       echo "SUITE: one or more of the following (default is all):"
-      echo "       facebook-ios-sdk-tests: unit tests"
+      echo "       FacebookSDKTests: unit tests"
       echo "       FacebookSDKIntegrationTests: integration tests"
+      echo "       FacebookSDKApplicationTests: application tests"
       die
       ;;
     "n")
@@ -56,15 +57,21 @@ if [ -n "$*" ]; then
     SCHEMES="$*"
 fi
 
-test -x "$XCODEBUILD" || die 'Could not find xcodebuild in $PATH'
-
 cd "$FB_SDK_SRC"
 
+test -d "$FB_SDK_BUILD" \
+  || mkdir -p "$FB_SDK_BUILD" \
+  || die "Could not create directory $FB_SDK_BUILD"
+
 for SCHEME in $SCHEMES; do
-    $XCODEBUILD \
-	-sdk iphonesimulator \
-	-configuration $BUILDCONFIGURATION \
-	-scheme $SCHEME \
-	$CLEAN test \
-	|| die "Error while running unit tests"
+    "$XCTOOL" \
+        -project facebook-ios-sdk.xcodeproj \
+        -scheme $SCHEME \
+        -sdk iphonesimulator \
+        -configuration "$BUILDCONFIGURATION" \
+        ONLY_ACTIVE_ARCH=YES \
+        SYMROOT="$FB_SDK_BUILD" \
+        $CLEAN test \
+        || die "Error while running unit tests"
 done
+

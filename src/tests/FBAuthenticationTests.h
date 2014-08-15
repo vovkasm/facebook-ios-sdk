@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-#import <SenTestingKit/SenTestingKit.h>
+#import <XCTest/XCTest.h>
 
 #import "FBSDKMacros.h"
+#import "FBTests.h"
 
 @class FBTestBlocker;
 
@@ -25,7 +26,7 @@
 FBSDK_EXTERN NSString *const kAuthenticationTestValidToken;
 FBSDK_EXTERN NSString *const kAuthenticationTestAppId;
 
-@interface FBAuthenticationTests : SenTestCase {
+@interface FBAuthenticationTests : FBTests {
 @protected
 
     FBTestBlocker *_blocker;

@@ -28,12 +28,25 @@
 NSString *kTestToken = @"This is a token";
 NSString *kTestAppId = @"AnAppId";
 
-@implementation FBTests
+@implementation FBTests {
+    id _mockBundle;
+}
+
+- (void)setUp {
+    _mockBundle = [[OCMockObject partialMockForObject:[NSBundle mainBundle]] retain];
+    [[[_mockBundle stub] andReturn:[[NSUUID UUID] UUIDString]] bundleIdentifier];
+}
 
 - (void)tearDown
 {
-    [OHHTTPStubs removeAllRequestHandlers];
+    [OHHTTPStubs removeAllStubs];
+    [_mockBundle release];
+    _mockBundle = nil;
     [super tearDown];
+}
+
+- (OCMockObject *)mainBundleMock {
+    return _mockBundle;
 }
 
 #pragma mark Handlers
@@ -41,8 +54,8 @@ NSString *kTestAppId = @"AnAppId";
 - (FBRequestHandler)handlerExpectingSuccessSignaling:(FBTestBlocker *)blocker {
     FBRequestHandler handler =
     ^(FBRequestConnection *connection, id result, NSError *error) {
-        STAssertTrue(!error, @"got unexpected error");
-        STAssertNotNil(result, @"didn't get expected result");
+        XCTAssertTrue(!error, @"got unexpected error");
+        XCTAssertNotNil(result, @"didn't get expected result");
         [blocker signal];
     };
     return [[handler copy] autorelease];
@@ -51,8 +64,8 @@ NSString *kTestAppId = @"AnAppId";
 - (FBRequestHandler)handlerExpectingFailureSignaling:(FBTestBlocker *)blocker {
     FBRequestHandler handler =
     ^(FBRequestConnection *connection, id result, NSError *error) {
-        STAssertNotNil(error, @"didn't get expected error");
-        STAssertTrue(!result, @"got unexpected result");
+        XCTAssertNotNil(error, @"didn't get expected error");
+        XCTAssertTrue(!result, @"got unexpected result");
         [blocker signal];
     };
     return [[handler copy] autorelease];
@@ -66,7 +79,9 @@ NSString *kTestAppId = @"AnAppId";
                                                              permissions:nil
                                                           expirationDate:[NSDate dateWithTimeIntervalSinceNow:3600]
                                                                loginType:FBSessionLoginTypeNone
-                                                             refreshDate:nil];
+                                                             refreshDate:nil
+                                                  permissionsRefreshDate:nil
+                                                                   appID:kTestAppId];
 
     FBAccessTokenData *mockToken = [OCMockObject partialMockForObject:token];
     return mockToken;
@@ -117,7 +132,7 @@ NSString *kTestAppId = @"AnAppId";
         [blocker signal];
     });
 
-    [blocker wait];
+    XCTAssertTrue([blocker waitWithTimeout:30], @"blocker timed out");
 
     [blocker release];
 }
@@ -159,19 +174,18 @@ NSString *kTestAppId = @"AnAppId";
         return nil;
     };
 
-    [OHHTTPStubs shouldStubRequestsPassingTest:^BOOL(NSURLRequest *request) {
+    [OHHTTPStubs stubRequestsPassingTest:^BOOL(NSURLRequest *request) {
         if (callback) {
             callback(request);
         }
 
-        return matchingKey(request.URL.absoluteString);
+        return matchingKey(request.URL.absoluteString) != nil;
     } withStubResponse:^OHHTTPStubsResponse *(NSURLRequest *request) {
         id result = requestsAndResponses[matchingKey(request.URL.absoluteString)];
         NSData *data = [[FBUtility simpleJSONEncode:result] dataUsingEncoding:NSUTF8StringEncoding];
 
         return [OHHTTPStubsResponse responseWithData:data
                                           statusCode:statusCode
-                                        responseTime:0
                                              headers:nil];
     }];
 }
